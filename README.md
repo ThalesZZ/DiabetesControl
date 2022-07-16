@@ -1,1 +1,3 @@
 # DiabetesControl
+
+By Thales Zarzar
