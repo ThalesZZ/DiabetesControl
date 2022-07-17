@@ -7,6 +7,12 @@ import { TIME_FORMAT } from './utils'
 function App() {
   const [entryMap, setEntryMap] = React.useState<EntryMap>(new Map())
 
+  const times: Set<string> = React.useMemo<Set<string>>(() => {
+    const times: Array<string> = []
+    Array.from(entryMap.keys()).forEach(key => entryMap.get(key)?.forEach(entry => times.push(moment(entry.date).format(TIME_FORMAT))))
+    return new Set<string>(times.sort((t1, t2) => t1 > t2 ? 1 : -1))
+  },[entryMap])
+
   const reader = React.useMemo(() => new FileReader(), [])
   React.useEffect(() => {
     reader.onload = e => {
@@ -22,22 +28,35 @@ function App() {
     reader.readAsText(file)
   }, [reader])
 
+  const makeRow = React.useCallback((entries: Array<Entry> | undefined, field: 'glucose' | 'cho' | 'insulin' ) => 
+    Array.from(times).map(time => {
+      const entry = entries?.find(entry => time === moment(entry.date).format(TIME_FORMAT))
+      return <td>{entry ? entry[field] : ''}</td>
+    }), [times]
+  )
+
   return (
     <Container>
       <input type="file" onChange={onFileSelection} accept=".csv" />
-        {Array.from(entryMap.keys()).map((key) => {
+      <table>
+        <tr>
+          {Array.from(times).map(time => {
+            return (<th className='times' key={time}>{time}</th>)
+          })}
+        </tr>
+        {Array.from(entryMap.keys()).map(key => {
           const entries = entryMap.get(key)?.sort((e1, e2) => e1.date > e2.date ? 1 : -1)
 
           return (
-            <table>
-              <tr><th colSpan={entries?.length}>{key}</th></tr>
-              <tr>{entries?.map(entry => (<td>{moment(entry.date).format(TIME_FORMAT)}</td>))}</tr>
-              <tr>{entries?.map(entry => (<td>{entry.glucose}</td>))}</tr>
-              <tr>{entries?.map(entry => (<td>{entry.cho}g</td>))}</tr>
-              <tr>{entries?.map(entry => (<td>{entry.insulin}U</td>))}</tr>
-            </table>
+            <>
+              <tr><th colSpan={times.size}>{key}</th></tr>
+              <tr>{makeRow(entries, 'glucose')}</tr>
+              <tr>{makeRow(entries, 'cho')}</tr>
+              <tr>{makeRow(entries, 'insulin')}</tr>
+            </>
           )
         })}
+      </table>
     </Container>
   )
 }
@@ -48,9 +67,16 @@ const Container = styled.div`
   gap: 15px;
 
   table {
-    border: 1px solid black;
+    background-color: #293045;
     th, td {
       text-align: center;
+      color: white;
+    }
+    th {
+      background-color: #52596E;
+    }
+    .times {
+      background-color: #293045;
     }
   }
 `
