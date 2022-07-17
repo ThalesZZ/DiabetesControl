@@ -1,7 +1,9 @@
 interface Entry {
     date: Date
-    glucose: number
+    glucose: number | '#'
     cho: number
-    insulin: number
+    insulin: number | '#'
     comment: string
 }
+
+type EntryMap = Map<string, Array<Entry>>
